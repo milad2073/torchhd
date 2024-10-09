@@ -554,10 +554,11 @@ def circular(
     """
     vsa_tensor = get_vsa_tensor_class(vsa)
 
-    if vsa == "HRR" or vsa == "VTB":
-        raise ValueError(
-            "The circular hypervectors do currently not work with the HRR and VTB models. We are not sure why, if you have any insight that could help please share it at: https://github.com/hyperdimensional-computing/torchhd/issues/108."
-        )
+    # if vsa == "HRR" or vsa == "VTB":
+    # if vsa == "VTB":
+    #     raise ValueError(
+    #         "The circular hypervectors do currently not work with the HRR and VTB models. We are not sure why, if you have any insight that could help please share it at: https://github.com/hyperdimensional-computing/torchhd/issues/108."
+    #     )
 
     # convert from normalized "randomness" variable r to
     # number of levels between orthogonal pairs or "span"
@@ -587,14 +588,23 @@ def circular(
         dtype=span_hv.dtype,
         device=span_hv.device,
     ).as_subclass(vsa_tensor)
+    
+    hv_hist = torch.empty(
+        num_vectors*2,
+        dimensions,
+        dtype=span_hv.dtype,
+        device=span_hv.device,
+    ).as_subclass(vsa_tensor)
 
     if vsa == "BSBC" or vsa == "MCR":
         hv.block_size = span_hv.block_size
+        hv_hist.block_size = span_hv.block_size
 
     mutation_history = deque()
 
     # first vector is always a random vector
     hv[0] = span_hv[0]
+    hv_hist[0] = span_hv[0]
     # mutation hypervector is the last generated vector while walking through the circle
     mutation_hv = span_hv[0]
 
@@ -618,16 +628,21 @@ def circular(
 
             temp_hv = torch.where(threshold_v[span_idx] < t, span_start_hv, span_end_hv)
 
-        mutation_history.append(bind(temp_hv, inverse(mutation_hv)))
+        mutation_history.append(bind(inverse(temp_hv), mutation_hv))
+        # mutation_history.append(bind(temp_hv, inverse(mutation_hv)))
         mutation_hv = temp_hv
-
+        # mutation_history.append(mutation_hv)
+        hv_hist[i] = mutation_hv
         if i % 2 == 0:
             hv[i // 2] = mutation_hv
 
+            
+
     for i in range(num_vectors + 1, num_vectors * 2 - 1):
         mut = mutation_history.popleft()
-        mutation_hv = bind(mutation_hv, inverse(mut))
-
+        mutation_hv = bind(mutation_hv, mut)
+        # mutation_hv = bind(mutation_hv, inverse(mut))
+        hv_hist[i] = mutation_hv
         if i % 2 == 0:
             hv[i // 2] = mutation_hv
 

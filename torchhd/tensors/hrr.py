@@ -277,7 +277,7 @@ class HRRTensor(VSATensor):
 
     def exact_inverse(self) -> "HRRTensor":
         """Unstable, but exact, inverse"""
-        result = ifft(torch.reciprocal(fft(self)))
+        result = ifft(torch.reciprocal(fft(self)) )
         result = torch.real(result)
         return torch.nan_to_num(result)
 
@@ -305,6 +305,7 @@ class HRRTensor(VSATensor):
             HRR([[ 0.0090, -0.1744, -0.2351,  0.0441,  0.0836,  0.2620]], dtype=torch.float64)
 
         """
+        return self.exact_inverse()
         # the following two are equivalent, the last one is more efficient.
         # result = ifft(torch.conj(fft(self)))
         result = torch.roll(torch.flip(self, dims=[-1]), 1, dims=[-1])

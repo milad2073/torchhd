@@ -86,7 +86,8 @@ class Testcircular:
 
             return
 
-        if vsa == "HRR" or vsa == "VTB":
+        if vsa == "VTB":
+        # if vsa == "HRR" or vsa == "VTB":
             with pytest.raises(ValueError):
                 functional.circular(3, 26, vsa, dtype=dtype)
 
