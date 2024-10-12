@@ -267,7 +267,19 @@ class HRRTensor(VSATensor):
             HRR([-0.0362, -0.0910,  0.0114,  0.0445,  0.1244,  0.0388], dtype=torch.float64)
 
         """
-        result = ifft(torch.mul(fft(self), fft(other)))
+        # n = len(self)
+        # J = range(n)
+        # K = range(n)
+        # terms = [sum([other[k % n] * self[(j - k) % n] for k in K]) for j in J]
+        # return HRRTensor(terms)
+        self_fft = fft(self)
+        # self_fft /= self_fft.abs()
+        other_fft = fft(other)
+        # other_fft /= other_fft.abs()
+        
+        mul = torch.mul(self_fft, other_fft)
+        # mul /= mul.abs()
+        result = ifft(mul)
         return torch.real(result)
 
     def multibind(self) -> "HRRTensor":
@@ -277,7 +289,11 @@ class HRRTensor(VSATensor):
 
     def exact_inverse(self) -> "HRRTensor":
         """Unstable, but exact, inverse"""
-        result = ifft(torch.reciprocal(fft(self)) )
+        
+        self_fft = fft(self)
+        self_fft /= self_fft.abs()
+        
+        result = ifft(torch.reciprocal(self_fft) )
         result = torch.real(result)
         return torch.nan_to_num(result)
 
@@ -305,10 +321,19 @@ class HRRTensor(VSATensor):
             HRR([[ 0.0090, -0.1744, -0.2351,  0.0441,  0.0836,  0.2620]], dtype=torch.float64)
 
         """
-        return self.exact_inverse()
+        # tmp = self[0]
+        # self[0] = 1
+        # res1 = self.exact_inverse()
+        # res1[0] = 1/tmp
+        # return res1
+    
+        self_fft = fft(self)
+        # self_fft /= self_fft.abs()
+        # self = ifft(self_fft)
         # the following two are equivalent, the last one is more efficient.
-        # result = ifft(torch.conj(fft(self)))
-        result = torch.roll(torch.flip(self, dims=[-1]), 1, dims=[-1])
+        result = ifft(torch.conj(self_fft))
+        # result = torch.roll(torch.flip(self, dims=[-1]), 1, dims=[-1])
+
         return torch.real(result)
 
     def negative(self) -> "HRRTensor":

@@ -5,8 +5,8 @@ import torch
 generator = torch.Generator()
 generator.manual_seed(1)
 
-hv = functional.circular(4, 1000000, 'MCR', generator=generator, dtype=torch.float32,block_size=64)
-# hv = functional.circular(4, 1000000, 'HRR', generator=generator, dtype=torch.float32,)
+# hv = functional.circular(8, 1000000, 'MCR', generator=generator, dtype=torch.float32,block_size=64)
+hv = functional.circular(8, 1000000, 'HRR', generator=generator, dtype=torch.float32,)
 sims = functional.cosine_similarity(hv[0], hv)
 sims_diff = sims[:-1] - sims[1:]
 
