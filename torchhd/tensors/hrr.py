@@ -28,6 +28,8 @@ from torch.fft import fft, ifft
 import torch.nn.functional as F
 import math
 
+from torchhd.tensors.fhrr import FHRRTensor
+
 from torchhd.tensors.base import VSATensor
 
 
@@ -186,6 +188,10 @@ class HRRTensor(VSATensor):
             options = ", ".join([str(x) for x in cls.supported_dtypes])
             raise ValueError(f"{name} vectors must be one of dtype {options}.")
 
+        fhrr = FHRRTensor.random(num_vectors,dimensions, generator=generator)
+        
+        return torch.fft.irfft(fhrr.as_subclass(cls),fhrr.shape[-1])
+    
         size = (num_vectors, dimensions)
         result = torch.randn(size, dtype=dtype, device=device, generator=generator)
         result = F.normalize(result, p=2, dim=-1)
@@ -278,9 +284,10 @@ class HRRTensor(VSATensor):
         # other_fft /= other_fft.abs()
         
         mul = torch.mul(self_fft, other_fft)
-        # mul /= mul.abs()
+        mul /= mul.abs()
         result = ifft(mul)
         return torch.real(result)
+        return result
 
     def multibind(self) -> "HRRTensor":
         """Bind multiple hypervectors"""
@@ -291,7 +298,7 @@ class HRRTensor(VSATensor):
         """Unstable, but exact, inverse"""
         
         self_fft = fft(self)
-        self_fft /= self_fft.abs()
+        # self_fft /= self_fft.abs()
         
         result = ifft(torch.reciprocal(self_fft) )
         result = torch.real(result)
@@ -328,7 +335,7 @@ class HRRTensor(VSATensor):
         # return res1
     
         self_fft = fft(self)
-        # self_fft /= self_fft.abs()
+        self_fft /= self_fft.abs()
         # self = ifft(self_fft)
         # the following two are equivalent, the last one is more efficient.
         result = ifft(torch.conj(self_fft))
