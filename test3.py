@@ -4,7 +4,8 @@ from matplotlib import pyplot as plt
 
 
 vsa_tensors = ["BSC","MAP","HRR","FHRR",
-               "BSBC","MCR", "VTB"]
+               "BSBC","MCR", "VTB"
+            ]
 
 generator = torch.Generator()
 generator.manual_seed(100)

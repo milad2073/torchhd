@@ -1,22 +1,48 @@
 from torchhd import functional
-from torchhd.functional import cosine_similarity as sim
 import torch
+from matplotlib import pyplot as plt
 
 vsa_tensors = ["BSC","MAP","HRR","FHRR",
                "BSBC","VTB","MCR"]
 
-for vsa in vsa_tensors:
-    
-    if vsa == "BSBC" or vsa == "MCR":
-        hvs = functional.level(6, 1000000, vsa, block_size=1024)
-    else:
-        hvs = functional.level(6, 1000000, vsa)
+generator = torch.Generator()
+generator.manual_seed(123)
 
-    a,b,c = hvs[0], hvs[1], hvs[3]
-    
-    if torch.isclose(1/sim(a,c) ,  1/sim(a,b) + 1/sim(b,c) ):
+for vsa in vsa_tensors:
+    if vsa == "BSBC" or vsa == "MCR":
+        hv  = functional.level(21, 10000, vsa,generator=generator, block_size=1024)
+        [rand_vec_1,rand_vec_2] = functional.random(2, 10000, vsa,generator=generator, block_size=1024)
+        [one] = functional.identity(1, 10000, vsa, block_size=1024)
         
-        print(f'{vsa}: Ok ')
     else:
-        print(f'{vsa}: Error ==> sim(a,c)={sim(a,c)} , sim(a,b)={sim(a,b)} + sim(b,c)={sim(b,c)}')
+        hv  = functional.level(21, 10000, vsa,generator=generator,)
+        [rand_vec_1,rand_vec_2] = functional.random(2, 10000, vsa,generator=generator,)
+        [one] = functional.identity(1, 10000, vsa,)
+    
+    c1 = hv[0]
+    c3 = hv[-1]
+    
+    print(f'{vsa}: Similarity c1 to c3 ==> {c1.cosine_similarity(c3)}')
+    
+    ti = []
+    t1t3_similarities = []
+    for i in range(len(hv)):
+        t1 = hv[i]
+    
+        # sim1 = c1.cosine_similarity(t1),c3.cosine_similarity(t1)
         
+        sim = c1.bind(c3).bind(t1.inverse()).cosine_similarity(t1)
+        
+        ti.append(i)
+        t1t3_similarities.append(sim)
+        
+    # plt.plot()
+    plt.plot(ti,t1t3_similarities,'-*')
+
+plt.legend(vsa_tensors)
+plt.xlabel("i")
+plt.ylabel("L(i) to L'(i) similarity ")
+ax = plt.gca()
+ax.set_ylim([-.2,1.2])
+plt.show()
+            

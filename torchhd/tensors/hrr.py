@@ -188,11 +188,13 @@ class HRRTensor(VSATensor):
             options = ", ".join([str(x) for x in cls.supported_dtypes])
             raise ValueError(f"{name} vectors must be one of dtype {options}.")
 
-        fhrr = FHRRTensor.random(num_vectors,dimensions, generator=generator)
-        
-        return torch.fft.irfft(fhrr.as_subclass(cls),fhrr.shape[-1])
-    
+        # fhrr = FHRRTensor.random(num_vectors,dimensions, generator=generator)
         size = (num_vectors, dimensions)
+        # angle = torch.empty(size, dtype=dtype, device=device)
+        # angle.uniform_(-math.pi, math.pi, generator=generator)
+        # result = torch.complex(angle.cos(), angle.sin())
+        # return torch.fft.irfft(result.as_subclass(cls),result.shape[-1])
+    
         result = torch.randn(size, dtype=dtype, device=device, generator=generator)
         result = F.normalize(result, p=2, dim=-1)
 
@@ -279,12 +281,12 @@ class HRRTensor(VSATensor):
         # terms = [sum([other[k % n] * self[(j - k) % n] for k in K]) for j in J]
         # return HRRTensor(terms)
         self_fft = fft(self)
-        # self_fft /= self_fft.abs()
+        self_fft /= self_fft.abs()
         other_fft = fft(other)
         # other_fft /= other_fft.abs()
         
         mul = torch.mul(self_fft, other_fft)
-        mul /= mul.abs()
+        # mul /= mul.abs()
         result = ifft(mul)
         return torch.real(result)
         return result
@@ -301,7 +303,7 @@ class HRRTensor(VSATensor):
         # self_fft /= self_fft.abs()
         
         result = ifft(torch.reciprocal(self_fft) )
-        result = torch.real(result)
+        # result = torch.real(result)
         return torch.nan_to_num(result)
 
     def inverse(self) -> "HRRTensor":
@@ -335,10 +337,10 @@ class HRRTensor(VSATensor):
         # return res1
     
         self_fft = fft(self)
-        self_fft /= self_fft.abs()
+        # self_fft /= self_fft.abs()
         # self = ifft(self_fft)
         # the following two are equivalent, the last one is more efficient.
-        result = ifft(torch.conj(self_fft))
+        result = ifft(torch.conj(self_fft).resolve_conj())
         # result = torch.roll(torch.flip(self, dims=[-1]), 1, dims=[-1])
 
         return torch.real(result)
